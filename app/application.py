@@ -13,6 +13,10 @@ from .tools.draw_tools import (
     SegmentTool, CircleTool, ArcTool, RectangleTool,
     EllipseTool, PolygonTool, SplineTool
 )
+from .tools.dimension_tools import (
+    LinearDimensionTool, RadialDimensionTool,
+    DiameterDimensionTool, AngularDimensionTool
+)
 from .ui import Toolbar, PropertiesPanel, StylePanel, StatusBar, SettingsPanel, InputPanel
 from .primitives.base import SnapType
 from .export.dxf_exporter import DXFExporter
@@ -48,6 +52,10 @@ class CADApplication:
             "ellipse": EllipseTool(),
             "polygon": PolygonTool(),
             "spline": SplineTool(),
+            "dim_linear": LinearDimensionTool(),
+            "dim_radius": RadialDimensionTool(),
+            "dim_diameter": DiameterDimensionTool(),
+            "dim_angle": AngularDimensionTool(),
         }
         
         # Create UI
@@ -289,7 +297,15 @@ class CADApplication:
         draw_menu.add_command(label="Эллипс", command=lambda: self._set_tool("ellipse"), accelerator="E")
         draw_menu.add_command(label="Многоугольник", command=lambda: self._set_tool("polygon"), accelerator="P")
         draw_menu.add_command(label="Сплайн", command=lambda: self._set_tool("spline"), accelerator="S")
-        
+
+        # Dimensions menu
+        dim_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Размеры", menu=dim_menu)
+        dim_menu.add_command(label="Линейный", command=lambda: self._set_tool("dim_linear"), accelerator="D")
+        dim_menu.add_command(label="Радиус", command=lambda: self._set_tool("dim_radius"))
+        dim_menu.add_command(label="Диаметр", command=lambda: self._set_tool("dim_diameter"))
+        dim_menu.add_command(label="Угловой", command=lambda: self._set_tool("dim_angle"))
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Справка", menu=help_menu)
@@ -379,7 +395,8 @@ class CADApplication:
         self.root.bind("<e>", lambda e: self._set_tool("ellipse"))
         self.root.bind("<p>", lambda e: self._set_tool("polygon"))
         self.root.bind("<s>", lambda e: self._set_tool("spline"))
-        
+        self.root.bind("<d>", lambda e: self._set_tool("dim_linear"))
+
         # View shortcuts
         self.root.bind("<plus>", lambda e: self._zoom_in())
         self.root.bind("<equal>", lambda e: self._zoom_in())
@@ -644,8 +661,9 @@ class CADApplication:
                            "• ЛР3: Стили линий по ГОСТ 2.303-68\n"
                            "• ЛР4: Геометрические примитивы и привязки\n"
                            "• ЛР5: Экспорт в DXF (R12/R2000)\n"
-                           "• ЛР6: Импорт из DXF\n\n"
-                           "Версия 1.2.0")
+                           "• ЛР6: Импорт из DXF\n"
+                           "• ЛР7: Размерные линии (ГОСТ 2.307-2011)\n\n"
+                           "Версия 1.3.0")
     
     def _on_close(self):
         """Handle window close"""

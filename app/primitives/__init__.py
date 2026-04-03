@@ -11,3 +11,4 @@ from .rectangle import Rectangle
 from .ellipse import Ellipse
 from .polygon import Polygon
 from .spline import Spline
+from .dimension import LinearDimension, RadialDimension, DiameterDimension, AngularDimension

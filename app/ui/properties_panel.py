@@ -130,7 +130,8 @@ class PropertiesPanel(tk.Frame):
                 self._create_property_row(props_inner, prop_name, props[prop_name], prop_config)
         
         # Computed properties section
-        readonly_props = ["length", "area", "perimeter", "circumference", "arc_length"]
+        readonly_props = ["length", "area", "perimeter", "circumference", "arc_length",
+                         "value", "angle_value", "diameter"]
         computed = [(p, props[p]) for p in readonly_props if p in props]
         
         if computed:
@@ -283,6 +284,48 @@ class PropertiesPanel(tk.Frame):
                 "radius": {"label": "Радиус", "type": "float"},
                 "num_sides": {"label": "Сторон", "type": "int"},
             },
+            "Размер горизонт.": {
+                "x1": {"label": "X₁", "type": "float"},
+                "y1": {"label": "Y₁", "type": "float"},
+                "x2": {"label": "X₂", "type": "float"},
+                "y2": {"label": "Y₂", "type": "float"},
+                "offset": {"label": "Отступ", "type": "float"},
+                "text_override": {"label": "Текст", "type": "string"},
+            },
+            "Размер вертик.": {
+                "x1": {"label": "X₁", "type": "float"},
+                "y1": {"label": "Y₁", "type": "float"},
+                "x2": {"label": "X₂", "type": "float"},
+                "y2": {"label": "Y₂", "type": "float"},
+                "offset": {"label": "Отступ", "type": "float"},
+                "text_override": {"label": "Текст", "type": "string"},
+            },
+            "Размер выровн.": {
+                "x1": {"label": "X₁", "type": "float"},
+                "y1": {"label": "Y₁", "type": "float"},
+                "x2": {"label": "X₂", "type": "float"},
+                "y2": {"label": "Y₂", "type": "float"},
+                "offset": {"label": "Отступ", "type": "float"},
+                "text_override": {"label": "Текст", "type": "string"},
+            },
+            "Размер радиуса": {
+                "cx": {"label": "Центр X", "type": "float"},
+                "cy": {"label": "Центр Y", "type": "float"},
+                "radius": {"label": "Радиус", "type": "float"},
+                "text_override": {"label": "Текст", "type": "string"},
+            },
+            "Размер диаметра": {
+                "cx": {"label": "Центр X", "type": "float"},
+                "cy": {"label": "Центр Y", "type": "float"},
+                "radius": {"label": "Радиус", "type": "float"},
+                "text_override": {"label": "Текст", "type": "string"},
+            },
+            "Угловой размер": {
+                "cx": {"label": "Вершина X", "type": "float"},
+                "cy": {"label": "Вершина Y", "type": "float"},
+                "arc_radius": {"label": "Радиус дуги", "type": "float"},
+                "text_override": {"label": "Текст", "type": "string"},
+            },
         }
         props = type_props.get(type_name, {})
         props.update(common_props)
@@ -316,6 +359,21 @@ class PropertiesPanel(tk.Frame):
             var.trace_add("write", lambda *args, pn=prop_name, v=var, pt=prop_type: self._on_entry_change(pn, v, pt))
             self._property_widgets[prop_name] = (entry, var)
             
+        elif prop_type == "string":
+            var = tk.StringVar(value=str(value))
+            entry = tk.Entry(
+                frame, textvariable=var, width=12,
+                bg=self.COLORS['input_bg'], fg=self.COLORS['text'],
+                insertbackground=self.COLORS['accent'],
+                font=("JetBrains Mono", 10),
+                bd=0, highlightthickness=1,
+                highlightbackground=self.COLORS['border'],
+                highlightcolor=self.COLORS['accent']
+            )
+            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=4)
+            var.trace_add("write", lambda *args, pn=prop_name, v=var: self._apply_property_change(pn, v.get()))
+            self._property_widgets[prop_name] = (entry, var)
+
         elif prop_type == "style":
             from ..styles.style_manager import StyleManager
             sm = StyleManager()
@@ -353,6 +411,9 @@ class PropertiesPanel(tk.Frame):
             "perimeter": "Периметр",
             "circumference": "Длина окр.",
             "arc_length": "Длина дуги",
+            "value": "Значение",
+            "angle_value": "Угол",
+            "diameter": "Диаметр",
         }
         label_text = labels.get(prop_name, prop_name)
         

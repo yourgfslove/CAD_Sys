@@ -55,7 +55,16 @@ class Toolbar(ttk.Frame):
         ])
         
         self._add_separator()
-        
+
+        self._create_tool_group("Размеры", [
+            ("dim_linear", "↔", "Линейный размер (D)", False),
+            ("dim_radius", "R", "Радиус", False),
+            ("dim_diameter", "⌀", "Диаметр", False),
+            ("dim_angle", "∠", "Угловой размер", False),
+        ])
+
+        self._add_separator()
+
         self._create_action_group("Навигация", [
             ("zoom_in", "⊕", "Увеличить (+)"),
             ("zoom_out", "⊖", "Уменьшить (-)"),

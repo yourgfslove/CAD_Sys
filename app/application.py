@@ -15,6 +15,8 @@ from .tools.draw_tools import (
 )
 from .ui import Toolbar, PropertiesPanel, StylePanel, StatusBar, SettingsPanel, InputPanel
 from .primitives.base import SnapType
+from .export.dxf_exporter import DXFExporter
+from .export.dxf_importer import DXFImporter
 
 
 class CADApplication:
@@ -250,6 +252,11 @@ class CADApplication:
         menubar.add_cascade(label="Файл", menu=file_menu)
         file_menu.add_command(label="Новый", command=self._new_document, accelerator="Ctrl+N")
         file_menu.add_separator()
+        file_menu.add_command(label="Импорт DXF...", command=self._import_dxf, accelerator="Ctrl+I")
+        file_menu.add_separator()
+        file_menu.add_command(label="Экспорт в DXF (R2000)...", command=lambda: self._export_dxf("R2000"), accelerator="Ctrl+E")
+        file_menu.add_command(label="Экспорт в DXF (R12)...", command=lambda: self._export_dxf("R12"))
+        file_menu.add_separator()
         file_menu.add_command(label="Выход", command=self._on_close, accelerator="Alt+F4")
         
         # Edit menu
@@ -357,6 +364,8 @@ class CADApplication:
     def _bind_shortcuts(self):
         """Bind keyboard shortcuts"""
         self.root.bind("<Control-n>", lambda e: self._new_document())
+        self.root.bind("<Control-i>", lambda e: self._import_dxf())
+        self.root.bind("<Control-e>", lambda e: self._export_dxf("R2000"))
         self.root.bind("<Control-a>", lambda e: self._select_all())
         self.root.bind("<Delete>", lambda e: self._delete_selected())
         
@@ -454,6 +463,84 @@ class CADApplication:
     
     # ================== Document Operations ==================
     
+    def _export_dxf(self, version: str = "R2000"):
+        """Export drawing to DXF file"""
+        if not self._cad_canvas.primitives:
+            messagebox.showwarning("Экспорт DXF", "Нет объектов для экспорта.")
+            return
+
+        filepath = filedialog.asksaveasfilename(
+            title=f"Экспорт в DXF ({version})",
+            defaultextension=".dxf",
+            filetypes=[("DXF файлы", "*.dxf"), ("Все файлы", "*.*")],
+            initialfile=f"drawing_{version}.dxf",
+        )
+        if not filepath:
+            return
+
+        try:
+            exporter = DXFExporter(version=version)
+            exporter.export(self._cad_canvas.primitives, filepath, version=version)
+            messagebox.showinfo(
+                "Экспорт DXF",
+                f"Файл успешно сохранён:\n{filepath}\n\n"
+                f"Версия: {version}\n"
+                f"Объектов: {len(self._cad_canvas.primitives)}\n"
+                f"Формат: {'AC1015' if version == 'R2000' else 'AC1009'}"
+            )
+        except Exception as e:
+            messagebox.showerror("Ошибка экспорта", f"Не удалось экспортировать:\n{str(e)}")
+
+    def _import_dxf(self):
+        """Import drawing from DXF file"""
+        filepath = filedialog.askopenfilename(
+            title="Импорт DXF",
+            filetypes=[("DXF файлы", "*.dxf"), ("Все файлы", "*.*")],
+        )
+        if not filepath:
+            return
+
+        try:
+            importer = DXFImporter()
+            primitives, info = importer.import_file(filepath)
+
+            if not primitives:
+                messagebox.showwarning(
+                    "Импорт DXF",
+                    f"Файл не содержит поддерживаемых объектов.\n\n"
+                    f"Версия: {info.get('version', '?')}\n"
+                    f"Всего сущностей: {info.get('total_entities', 0)}\n"
+                    f"Пропущено: {info.get('skipped', 0)}\n"
+                    f"Ошибок: {info.get('errors', 0)}"
+                )
+                return
+
+            # Добавляем примитивы на канвас
+            for prim in primitives:
+                self._cad_canvas.add_primitive(prim)
+
+            self._cad_canvas.redraw()
+            self._cad_canvas.zoom_to_fit()
+
+            # Формируем статистику по типам
+            by_type = info.get("by_type", {})
+            type_lines = "\n".join(
+                f"  {t}: {c}" for t, c in sorted(by_type.items())
+            )
+
+            messagebox.showinfo(
+                "Импорт DXF",
+                f"Файл успешно импортирован:\n{filepath}\n\n"
+                f"Версия: {info.get('version', '?')}\n"
+                f"Слоёв: {info.get('layers', 0)}\n"
+                f"Импортировано объектов: {info.get('imported', 0)}\n"
+                f"Пропущено: {info.get('skipped', 0)}\n"
+                f"Ошибок: {info.get('errors', 0)}\n\n"
+                f"По типам:\n{type_lines}"
+            )
+        except Exception as e:
+            messagebox.showerror("Ошибка импорта", f"Не удалось импортировать:\n{str(e)}")
+
     def _new_document(self):
         """Create new document"""
         if self._cad_canvas.primitives:
@@ -555,8 +642,10 @@ class CADApplication:
                            "• ЛР1: Отрезки в декартовых и полярных координатах\n"
                            "• ЛР2: Навигация (pan, zoom, rotate)\n"
                            "• ЛР3: Стили линий по ГОСТ 2.303-68\n"
-                           "• ЛР4: Геометрические примитивы и привязки\n\n"
-                           "Версия 1.0.0")
+                           "• ЛР4: Геометрические примитивы и привязки\n"
+                           "• ЛР5: Экспорт в DXF (R12/R2000)\n"
+                           "• ЛР6: Импорт из DXF\n\n"
+                           "Версия 1.2.0")
     
     def _on_close(self):
         """Handle window close"""
